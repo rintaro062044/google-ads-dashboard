@@ -252,34 +252,12 @@ table.datatable td.qs-bad { color: var(--critical); font-weight: 700; }
 .td-cat-block .cat-head .count { color: var(--ink-soft); font-weight: 400; }
 .td-cat-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
-/* KPI strip */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-@media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
-.kpi-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 14px 16px;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-height: 96px;
-}
-.kpi-card .label { font-size: 12px; color: var(--ink-soft); }
-.kpi-card .value { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; }
-.kpi-card .foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .delta { font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 999px; }
 .delta.up-good { color: var(--good); background: var(--good-soft); }
 .delta.up-bad { color: var(--critical); background: var(--critical-soft); }
 .delta.down-good { color: var(--good); background: var(--good-soft); }
 .delta.down-bad { color: var(--critical); background: var(--critical-soft); }
 .delta.flat { color: var(--ink-soft); background: var(--surface-2); }
-.spark { width: 84px; height: 26px; }
 
 /* section shell */
 .section {
@@ -480,8 +458,6 @@ footer.note {
       </div>
     </div>
 
-    <div class="kpi-grid" id="kpiGrid"></div>
-
     <div class="section">
       <h2>キャンペーンタイプ分析</h2>
     <p class="desc">検索・P-MAXなど、キャンペーンタイプ別の月次パフォーマンス。「競合比較軸」で同カテゴリ他社とも比較できます</p>
@@ -612,45 +588,6 @@ function totals(svc) {
   };
 }
 
-function sparklinePath(values, w, h, pad) {
-  const max = Math.max(...values, 1);
-  const min = Math.min(...values, 0);
-  const range = (max - min) || 1;
-  const n = values.length;
-  const step = n > 1 ? (w - pad * 2) / (n - 1) : 0;
-  return values.map((v, i) => {
-    const x = pad + step * i;
-    const y = h - pad - ((v - min) / range) * (h - pad * 2);
-    return (i === 0 ? "M" : "L") + x.toFixed(1) + "," + y.toFixed(1);
-  }).join(" ");
-}
-
-function sparkSVG(values, color) {
-  const w = 84, h = 26, pad = 3;
-  const path = sparklinePath(values, w, h, pad);
-  const last = values[values.length - 1];
-  const max = Math.max(...values, 1), min = Math.min(...values, 0);
-  const range = (max - min) || 1;
-  const lastX = w - pad;
-  const lastY = h - pad - ((last - min) / range) * (h - pad * 2);
-  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-    <path d="${path}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="2.3" fill="${color}"/>
-  </svg>`;
-}
-
-function deltaBadge(prev, curr, higherIsBetter) {
-  if (prev === null || prev === undefined || curr === null || curr === undefined || prev === 0) {
-    return `<span class="delta flat">—</span>`;
-  }
-  const pct = ((curr - prev) / prev) * 100;
-  const rounded = Math.abs(pct) < 0.5 ? 0 : pct;
-  const arrow = rounded > 0 ? "▲" : rounded < 0 ? "▼" : "→";
-  const isGood = rounded === 0 ? null : (rounded > 0) === higherIsBetter;
-  const cls = rounded === 0 ? "flat" : (isGood ? (rounded > 0 ? "up-good" : "down-good") : (rounded > 0 ? "up-bad" : "down-bad"));
-  return `<span class="delta ${cls}">${arrow} ${Math.abs(rounded).toFixed(1)}%</span>`;
-}
-
 function renderLegend() {
   const el = document.getElementById("legendRow");
   el.innerHTML = ORDER.map(k => {
@@ -672,38 +609,9 @@ function initServiceSelect() {
   });
 }
 
-function renderKPI() {
+function renderGoalHint() {
   const svc = DATA.services[mainKey];
-  const m = svc.monthly;
   const t = totals(svc);
-  const currM = m.length >= 1 ? m[m.length - 1] : null;
-  const prevM = m.length >= 2 ? m[m.length - 2] : null;
-  const colorVal = svcColor(mainKey);
-  const p = key => prevM ? prevM[key] : null;
-  const c = key => currM ? currM[key] : null;
-
-  const cards = [
-    { label: "費用（3ヶ月合計）", value: fmtYen(t.cost), series: m.map(x => x.cost), prev: p("cost"), curr: c("cost"), higherGood: false },
-    { label: "クリック数", value: fmtInt(t.clicks), series: m.map(x => x.clicks), prev: p("clicks"), curr: c("clicks"), higherGood: true },
-    { label: "表示回数", value: fmtInt(t.impressions), series: m.map(x => x.impressions), prev: p("impressions"), curr: c("impressions"), higherGood: true },
-    { label: "CTR", value: fmtPct(t.ctr), series: m.map(x => x.ctr), prev: p("ctr"), curr: c("ctr"), higherGood: true },
-    { label: "平均CPC", value: fmtYen(t.cpc), series: m.map(x => x.cpc), prev: p("cpc"), curr: c("cpc"), higherGood: false },
-    { label: "コンバージョン数", value: fmtInt(t.conversions), series: m.map(x => x.conversions), prev: p("conversions"), curr: c("conversions"), higherGood: true },
-    { label: "CVR", value: fmtPct(t.cvr), series: m.map(x => x.cvr), prev: p("cvr"), curr: c("cvr"), higherGood: true },
-    { label: "CPA", value: t.cpa ? fmtYen(t.cpa) : "—", series: m.map(x => x.cpa || 0), prev: p("cpa"), curr: c("cpa"), higherGood: false },
-  ];
-
-  document.getElementById("kpiGrid").innerHTML = cards.map(c => `
-    <div class="kpi-card">
-      <div class="label">${c.label}</div>
-      <div class="value num">${c.value}</div>
-      <div class="foot">
-        ${deltaBadge(c.prev, c.curr, c.higherGood)}
-        ${sparkSVG(c.series, colorVal)}
-      </div>
-    </div>
-  `).join("");
-
   const hintEl = document.getElementById("goalHint");
   if (targetCPA === null) {
     hintEl.textContent = "未設定（実績CPAとの比較に使用されます）";
@@ -1124,7 +1032,7 @@ function renderPeriodPill() {
 
 function renderAll() {
   renderPeriodPill();
-  renderKPI();
+  renderGoalHint();
   renderTypeAnalysis();
   renderCampaignAnalysis();
   renderKeywordAnalysis();
@@ -1148,7 +1056,7 @@ function initGoalBar() {
   input.addEventListener("input", () => {
     const v = parseFloat(input.value);
     targetCPA = input.value === "" || Number.isNaN(v) ? null : v;
-    renderKPI();
+    renderGoalHint();
     renderTypeAnalysis();
     renderCampaignAnalysis();
     renderKeywordAnalysis();
