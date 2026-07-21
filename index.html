@@ -230,6 +230,14 @@ select#serviceSelect:focus-visible { outline: 2px solid var(--accent); outline-o
 table.datatable td.cpa-good { color: var(--good); font-weight: 700; }
 table.datatable td.cpa-bad { color: var(--critical); font-weight: 700; }
 
+/* quality score diagnostics */
+.qual-chip { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.qual-chip.qual-good { color: var(--good); background: var(--good-soft); }
+.qual-chip.qual-bad { color: var(--critical); background: var(--critical-soft); }
+.qual-chip.qual-mid { color: var(--ink-soft); background: var(--surface-2); }
+table.datatable td.qs-good { color: var(--good); font-weight: 700; }
+table.datatable td.qs-bad { color: var(--critical); font-weight: 700; }
+
 /* TD analysis */
 .td-cat-block { margin-bottom: 14px; }
 .td-cat-block:last-child { margin-bottom: 0; }
@@ -528,6 +536,12 @@ footer.note {
       <div class="mtitle" style="font-size:12px;font-weight:700;color:var(--warn);margin-bottom:8px;">掲載順位起因のIS損失が大きいキーワード（上位10件）</div>
       <div class="table-scroll">
         <table class="datatable" id="rankLossTable"></table>
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="mtitle" style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:8px;">品質スコアが低いキーワード（下位10件）</div>
+      <div class="table-scroll">
+        <table class="datatable" id="qualityScoreTable"></table>
       </div>
     </div>
   </div>
@@ -1008,6 +1022,32 @@ function renderKeywordAnalysis() {
   document.getElementById("rankLossTable").innerHTML = `
     <thead><tr><th>キーワード</th><th class="num">費用</th><th class="num">IS損失（ランク）</th></tr></thead>
     <tbody>${rankLossRows || `<tr><td colspan="3" style="color:var(--ink-soft)">該当キーワードなし</td></tr>`}</tbody>`;
+
+  const qsRows = svc.qualityScoreKeywords.map(k => `
+    <tr>
+      <td>${k.keyword}</td>
+      <td class="num${qsColorClass(k.qualityScore)}">${k.qualityScore} / 10</td>
+      <td>${qualBadge(k.landingPageExperience)}</td>
+      <td>${qualBadge(k.adRelevance)}</td>
+      <td>${qualBadge(k.expectedCtr)}</td>
+      <td class="num">${fmtYen(k.cost)}</td>
+    </tr>`).join("");
+  document.getElementById("qualityScoreTable").innerHTML = `
+    <thead><tr><th>キーワード</th><th class="num">品質スコア</th><th>ランディングページの利便性</th><th>広告の関連性</th><th>推定クリック率</th><th class="num">費用</th></tr></thead>
+    <tbody>${qsRows || `<tr><td colspan="6" style="color:var(--ink-soft)">品質スコアのデータなし</td></tr>`}</tbody>`;
+}
+
+function qsColorClass(qs) {
+  if (qs === null || qs === undefined) return "";
+  if (qs >= 7) return " qs-good";
+  if (qs <= 4) return " qs-bad";
+  return "";
+}
+
+function qualBadge(text) {
+  if (!text || text === "--") return `<span class="qual-chip qual-mid">—</span>`;
+  const cls = text.includes("上") ? "qual-good" : text.includes("下") ? "qual-bad" : "qual-mid";
+  return `<span class="qual-chip ${cls}">${text}</span>`;
 }
 
 // ---- TD分析: 見出し・説明文をキーワードで訴求軸に自動分類 ----
@@ -1354,12 +1394,19 @@ function aggregateService(kw, query, ads) {
     const qs = numOrNull(gf(row, kw.nameToCol, "品質スコア"));
     const isVal = numOrNull(gf(row, kw.nameToCol, "検索広告のインプレッション シェア"));
     const rankLoss = numOrNull(gf(row, kw.nameToCol, "検索広告の IS 損失率（ランク）"));
+    const landingPageExperience = gf(row, kw.nameToCol, "ランディング ページの利便性");
+    const adRelevance = gf(row, kw.nameToCol, "広告の関連性");
+    const expectedCtr = gf(row, kw.nameToCol, "推定クリック率");
 
-    if (!kwTotals[keyword]) kwTotals[keyword] = { cost: 0, clicks: 0, impressions: 0, conversions: 0, campaign: null, adgroup: null };
+    if (!kwTotals[keyword]) kwTotals[keyword] = { cost: 0, clicks: 0, impressions: 0, conversions: 0, campaign: null, adgroup: null, qualityScore: null, landingPageExperience: null, adRelevance: null, expectedCtr: null };
     const kt = kwTotals[keyword];
     kt.cost += cost; kt.clicks += clicks; kt.impressions += impr; kt.conversions += cv;
     kt.campaign = gf(row, kw.nameToCol, "キャンペーン");
     kt.adgroup = gf(row, kw.nameToCol, "広告グループ");
+    if (qs !== null) kt.qualityScore = qs;
+    if (landingPageExperience && landingPageExperience !== "--") kt.landingPageExperience = landingPageExperience;
+    if (adRelevance && adRelevance !== "--") kt.adRelevance = adRelevance;
+    if (expectedCtr && expectedCtr !== "--") kt.expectedCtr = expectedCtr;
 
     if (qs !== null) qsValues.push(qs);
     if (isVal !== null) isValues.push(isVal);
@@ -1382,6 +1429,15 @@ function aggregateService(kw, query, ads) {
     .sort((a, b) => (b[1] * b[2]) - (a[1] * a[2]))
     .slice(0, 10)
     .map(([k, c, loss]) => ({ keyword: k, cost: Math.round(c), isRankLoss: Math.round(loss * 10000) / 10000 }));
+
+  const qualityScoreKeywords = Object.entries(kwTotals)
+    .filter(([, v]) => v.qualityScore !== null)
+    .map(([k, v]) => ({
+      keyword: k, cost: Math.round(v.cost), qualityScore: v.qualityScore,
+      landingPageExperience: v.landingPageExperience, adRelevance: v.adRelevance, expectedCtr: v.expectedCtr,
+    }))
+    .sort((a, b) => a.qualityScore - b.qualityScore || b.cost - a.cost)
+    .slice(0, 10);
 
   const avgQS = qsValues.length ? Math.round((qsValues.reduce((a, b) => a + b, 0) / qsValues.length) * 100) / 100 : null;
   const avgIS = isValues.length ? Math.round((isValues.reduce((a, b) => a + b, 0) / isValues.length) * 10000) / 10000 : null;
@@ -1515,6 +1571,7 @@ function aggregateService(kw, query, ads) {
     wastedKeywords: wasted,
     topPerformingKeywords: performing,
     rankLossKeywords: rankLossTop,
+    qualityScoreKeywords,
     wastedSearchTerms: qWastedList,
     avgQualityScore: avgQS,
     qualityScoreDist: qsDist,
