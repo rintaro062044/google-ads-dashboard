@@ -603,7 +603,7 @@ function sparklinePath(values, w, h, pad) {
   const min = Math.min(...values, 0);
   const range = (max - min) || 1;
   const n = values.length;
-  const step = (w - pad * 2) / (n - 1);
+  const step = n > 1 ? (w - pad * 2) / (n - 1) : 0;
   return values.map((v, i) => {
     const x = pad + step * i;
     const y = h - pad - ((v - min) / range) * (h - pad * 2);
@@ -662,18 +662,21 @@ function renderKPI() {
   const svc = DATA.services[mainKey];
   const m = svc.monthly;
   const t = totals(svc);
-  const prevM = m[m.length - 2], currM = m[m.length - 1];
+  const currM = m.length >= 1 ? m[m.length - 1] : null;
+  const prevM = m.length >= 2 ? m[m.length - 2] : null;
   const colorVal = svcColor(mainKey);
+  const p = key => prevM ? prevM[key] : null;
+  const c = key => currM ? currM[key] : null;
 
   const cards = [
-    { label: "費用（3ヶ月合計）", value: fmtYen(t.cost), series: m.map(x => x.cost), prev: prevM.cost, curr: currM.cost, higherGood: false },
-    { label: "クリック数", value: fmtInt(t.clicks), series: m.map(x => x.clicks), prev: prevM.clicks, curr: currM.clicks, higherGood: true },
-    { label: "表示回数", value: fmtInt(t.impressions), series: m.map(x => x.impressions), prev: prevM.impressions, curr: currM.impressions, higherGood: true },
-    { label: "CTR", value: fmtPct(t.ctr), series: m.map(x => x.ctr), prev: prevM.ctr, curr: currM.ctr, higherGood: true },
-    { label: "平均CPC", value: fmtYen(t.cpc), series: m.map(x => x.cpc), prev: prevM.cpc, curr: currM.cpc, higherGood: false },
-    { label: "コンバージョン数", value: fmtInt(t.conversions), series: m.map(x => x.conversions), prev: prevM.conversions, curr: currM.conversions, higherGood: true },
-    { label: "CVR", value: fmtPct(t.cvr), series: m.map(x => x.cvr), prev: prevM.cvr, curr: currM.cvr, higherGood: true },
-    { label: "CPA", value: t.cpa ? fmtYen(t.cpa) : "—", series: m.map(x => x.cpa || 0), prev: prevM.cpa, curr: currM.cpa, higherGood: false },
+    { label: "費用（3ヶ月合計）", value: fmtYen(t.cost), series: m.map(x => x.cost), prev: p("cost"), curr: c("cost"), higherGood: false },
+    { label: "クリック数", value: fmtInt(t.clicks), series: m.map(x => x.clicks), prev: p("clicks"), curr: c("clicks"), higherGood: true },
+    { label: "表示回数", value: fmtInt(t.impressions), series: m.map(x => x.impressions), prev: p("impressions"), curr: c("impressions"), higherGood: true },
+    { label: "CTR", value: fmtPct(t.ctr), series: m.map(x => x.ctr), prev: p("ctr"), curr: c("ctr"), higherGood: true },
+    { label: "平均CPC", value: fmtYen(t.cpc), series: m.map(x => x.cpc), prev: p("cpc"), curr: c("cpc"), higherGood: false },
+    { label: "コンバージョン数", value: fmtInt(t.conversions), series: m.map(x => x.conversions), prev: p("conversions"), curr: c("conversions"), higherGood: true },
+    { label: "CVR", value: fmtPct(t.cvr), series: m.map(x => x.cvr), prev: p("cvr"), curr: c("cvr"), higherGood: true },
+    { label: "CPA", value: t.cpa ? fmtYen(t.cpa) : "—", series: m.map(x => x.cpa || 0), prev: p("cpa"), curr: c("cpa"), higherGood: false },
   ];
 
   document.getElementById("kpiGrid").innerHTML = cards.map(c => `
@@ -830,7 +833,7 @@ const DRILL_METRIC_COLS = [
   { key: "cvr", label: "CVR", fmt: v => fmtPct(v) },
   { key: "cpa", label: "CPA", fmt: v => v ? fmtYen(v) : "—" },
 ];
-const TYPE_ORDER = ["検索", "P-MAX", "ディスプレイ", "デマンドジェネレーション"];
+const TYPE_ORDER = ["アカウント", "検索", "P-MAX", "ディスプレイ", "デマンドジェネレーション"];
 
 // axis: "group" = group-by-name rows with month sub-rows; "month" = group-by-month rows with name sub-rows (transposed)
 function buildPivotGroups(source, axis, orderedNames) {
@@ -884,9 +887,18 @@ function renderPivotTable(tableId, source, axis, groupColLabel, subColLabel, ord
   renderGroupsTable(tableId, groups, firstLabel, secondLabel);
 }
 
+// 「アカウント」は campaignTypeMonthly ではなく svc.monthly（全タイプ合計）に入っているため、
+// 描画時にキャンペーンタイプの1つとして合成して扱う。
+function campaignTypeRows(svc, typeName) {
+  return typeName === "アカウント" ? svc.monthly : (svc.campaignTypeMonthly[typeName] || []);
+}
+function typeMonthlyWithAccount(svc) {
+  return { ...svc.campaignTypeMonthly, "アカウント": svc.monthly };
+}
+
 // 3ヶ月合計を「キャンペーンタイプ」単位でサービス横断に集計（競合比較軸用）
 function typeTotals(svc, typeName) {
-  const rows = svc.campaignTypeMonthly[typeName] || [];
+  const rows = campaignTypeRows(svc, typeName);
   const cost = rows.reduce((a, r) => a + r.cost, 0);
   const clicks = rows.reduce((a, r) => a + r.clicks, 0);
   const impressions = rows.reduce((a, r) => a + r.impressions, 0);
@@ -901,7 +913,7 @@ function typeTotals(svc, typeName) {
 }
 
 function buildTypeCompareGroups() {
-  const typesPresent = TYPE_ORDER.filter(t => ORDER.some(k => DATA.services[k].campaignTypeMonthly[t]));
+  const typesPresent = TYPE_ORDER.filter(t => ORDER.some(k => campaignTypeRows(DATA.services[k], t).length > 0));
   return typesPresent.map(type => ({
     label: type,
     rows: ORDER.map(k => ({
@@ -916,20 +928,20 @@ function buildTypeCompareGroups() {
 const ZERO_METRICS = { cost: 0, clicks: 0, impressions: 0, conversions: 0, ctr: 0, cpc: 0, cvr: 0, cpa: null };
 
 function buildTypeCompareGroupsMonthly() {
-  const typesPresent = TYPE_ORDER.filter(t => ORDER.some(k => DATA.services[k].campaignTypeMonthly[t]));
+  const typesPresent = TYPE_ORDER.filter(t => ORDER.some(k => campaignTypeRows(DATA.services[k], t).length > 0));
   const allMonths = [...new Set(
-    ORDER.flatMap(k => Object.values(DATA.services[k].campaignTypeMonthly).flat().map(r => r.month))
+    ORDER.flatMap(k => TYPE_ORDER.flatMap(t => campaignTypeRows(DATA.services[k], t).map(r => r.month)))
   )].sort();
 
   const groups = [];
   typesPresent.forEach(type => {
     allMonths.forEach(month => {
-      const hasAny = ORDER.some(k => (DATA.services[k].campaignTypeMonthly[type] || []).some(r => r.month === month));
+      const hasAny = ORDER.some(k => campaignTypeRows(DATA.services[k], type).some(r => r.month === month));
       if (!hasAny) return;
       groups.push({
         label: `${type}｜${MONTH_LABEL[month] || month}`,
         rows: ORDER.map(k => {
-          const rows = DATA.services[k].campaignTypeMonthly[type] || [];
+          const rows = campaignTypeRows(DATA.services[k], type);
           const r = rows.find(x => x.month === month);
           return { subLabel: DATA.services[k].name, data: r || ZERO_METRICS, isMain: k === mainKey, color: svcColor(k) };
         }),
@@ -952,7 +964,7 @@ function renderTypeAnalysis() {
     return;
   }
   const svc = DATA.services[mainKey];
-  renderPivotTable("typeTable", svc.campaignTypeMonthly, typeAxis, "キャンペーンタイプ", "月", TYPE_ORDER);
+  renderPivotTable("typeTable", typeMonthlyWithAccount(svc), typeAxis, "キャンペーンタイプ", "月", TYPE_ORDER);
 }
 
 function renderCampaignAnalysis() {
