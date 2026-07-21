@@ -1008,10 +1008,15 @@ function renderKeywordAnalysis() {
       <td class="num">${fmtYen(k.cost)}</td>
       <td class="num">${k.conversions.toFixed(1)}</td>
       <td class="num${cpaColorClass(k.cpa)}">${k.cpa ? fmtYen(k.cpa) : "—"}</td>
+      <td class="num">${k.cpc ? fmtYen(k.cpc) : "—"}</td>
+      <td class="num${qsColorClass(k.qualityScore)}">${k.qualityScore !== null && k.qualityScore !== undefined ? `${k.qualityScore} / 10` : "—"}</td>
+      <td>${qualBadge(k.landingPageExperience)}</td>
+      <td>${qualBadge(k.adRelevance)}</td>
+      <td>${qualBadge(k.expectedCtr)}</td>
     </tr>`).join("");
   document.getElementById("performTable").innerHTML = `
-    <thead><tr><th>キーワード</th><th class="num">費用</th><th class="num">CV</th><th class="num">CPA</th></tr></thead>
-    <tbody>${perfRows || `<tr><td colspan="4" style="color:var(--ink-soft)">データなし</td></tr>`}</tbody>`;
+    <thead><tr><th>キーワード</th><th class="num">費用</th><th class="num">CV</th><th class="num">CPA</th><th class="num">CPC</th><th class="num">品質スコア</th><th>LP利便性</th><th>広告関連性</th><th>推定CTR</th></tr></thead>
+    <tbody>${perfRows || `<tr><td colspan="9" style="color:var(--ink-soft)">データなし</td></tr>`}</tbody>`;
 
   const rankLossRows = svc.rankLossKeywords.map(k => `
     <tr>
@@ -1421,7 +1426,13 @@ function aggregateService(kw, query, ads) {
 
   const performing = Object.entries(kwTotals)
     .filter(([, v]) => v.conversions > 0)
-    .map(([k, v]) => ({ keyword: k, cost: Math.round(v.cost), clicks: Math.round(v.clicks), conversions: Math.round(v.conversions * 10) / 10, cpa: v.conversions ? Math.round(v.cost / v.conversions) : null }))
+    .map(([k, v]) => ({
+      keyword: k, cost: Math.round(v.cost), clicks: Math.round(v.clicks),
+      conversions: Math.round(v.conversions * 10) / 10, cpa: v.conversions ? Math.round(v.cost / v.conversions) : null,
+      cpc: v.clicks ? Math.round((v.cost / v.clicks) * 10) / 10 : null,
+      qualityScore: v.qualityScore, landingPageExperience: v.landingPageExperience,
+      adRelevance: v.adRelevance, expectedCtr: v.expectedCtr,
+    }))
     .sort((a, b) => b.conversions - a.conversions)
     .slice(0, 10);
 
