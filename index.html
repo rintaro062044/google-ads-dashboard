@@ -1269,8 +1269,43 @@ function extractAllRows(doc, sharedStrings) {
   return rows;
 }
 
-function parseSheet(doc, sharedStrings, headerRowNum) {
+// Google広告のレポート書き出しは「タイトル行→期間行→ヘッダー行→データ」が基本形だが、
+// シートによってタイトル・期間行が手作業で削除され、ヘッダーが先頭行にずれているケースがある。
+// そのため固定行番号ではなく、先頭数行のうち最も列が埋まっている行をヘッダー行とみなす。
+function detectHeaderRow(allRows, maxScan) {
+  maxScan = maxScan || 6;
+  let bestRow = 3, bestCount = -1;
+  for (const row of allRows) {
+    if (row.rowNum < 1 || row.rowNum > maxScan) continue;
+    const count = Object.values(row.cells).filter(v => v !== null && v !== "").length;
+    if (count > bestCount) { bestCount = count; bestRow = row.rowNum; }
+  }
+  return bestRow;
+}
+
+// ヘッダー行より上にある「2026年4月1日 - 2026年6月30日」のような期間表記を、
+// 月次列（月）が存在しないレポートの代替キー・表示ラベルとして使う。
+const PERIOD_RE = /(\d{4})年(\d{1,2})月\d{1,2}日\s*[-〜~]\s*(\d{4})年(\d{1,2})月\d{1,2}日/;
+function extractPeriodLabel(allRows, headerRow) {
+  for (const row of allRows) {
+    if (row.rowNum >= headerRow) continue;
+    for (const v of Object.values(row.cells)) {
+      if (typeof v !== "string") continue;
+      const m = v.match(PERIOD_RE);
+      if (m) {
+        const start = `${m[1]}-${m[2].padStart(2, "0")}`;
+        const end = `${m[3]}-${m[4].padStart(2, "0")}`;
+        return start === end ? start : `${start}〜${end}`;
+      }
+    }
+  }
+  return null;
+}
+
+function parseSheet(doc, sharedStrings) {
   const allRows = extractAllRows(doc, sharedStrings);
+  const headerRowNum = detectHeaderRow(allRows);
+  const periodLabel = extractPeriodLabel(allRows, headerRowNum);
   const nameToCol = {};
   const dataRows = [];
   for (const row of allRows) {
@@ -1282,13 +1317,24 @@ function parseSheet(doc, sharedStrings, headerRowNum) {
       dataRows.push(row);
     }
   }
-  return { nameToCol, dataRows };
+  return { nameToCol, dataRows, periodLabel };
 }
 
 function gf(row, nameToCol, name) {
   const idx = nameToCol[name];
   if (idx === undefined) return undefined;
   return row.cells[idx];
+}
+
+// 列名はエクスポート時の設定次第で「CL/IMP/COST/CV」のような略称にも
+// 「クリック数/表示回数/費用/コンバージョン」のような日本語表記にもなり得るため、
+// 候補名を順に試して最初に見つかった列を使う。
+function gfAny(row, nameToCol, names) {
+  for (const name of names) {
+    const idx = nameToCol[name];
+    if (idx !== undefined) return row.cells[idx];
+  }
+  return undefined;
 }
 
 // ---- port of the Python aggregation logic (aggregate.py) ----
@@ -1299,13 +1345,12 @@ function aggregateService(kw, query, ads) {
   const rankLossValues = [];
 
   for (const row of kw.dataRows) {
-    const month = monthStr(gf(row, kw.nameToCol, "月"));
     const keyword = gf(row, kw.nameToCol, "キーワード");
-    if (keyword === undefined || keyword === null || keyword === "" || month === null) continue;
-    const cost = numOrNull(gf(row, kw.nameToCol, "COST")) || 0;
-    const clicks = numOrNull(gf(row, kw.nameToCol, "CL")) || 0;
-    const impr = numOrNull(gf(row, kw.nameToCol, "IMP")) || 0;
-    const cv = numOrNull(gf(row, kw.nameToCol, "CV")) || 0;
+    if (keyword === undefined || keyword === null || keyword === "") continue;
+    const cost = numOrNull(gfAny(row, kw.nameToCol, ["COST", "費用"])) || 0;
+    const clicks = numOrNull(gfAny(row, kw.nameToCol, ["CL", "クリック数"])) || 0;
+    const impr = numOrNull(gfAny(row, kw.nameToCol, ["IMP", "表示回数"])) || 0;
+    const cv = numOrNull(gfAny(row, kw.nameToCol, ["CV", "コンバージョン"])) || 0;
     const qs = numOrNull(gf(row, kw.nameToCol, "品質スコア"));
     const isVal = numOrNull(gf(row, kw.nameToCol, "検索広告のインプレッション シェア"));
     const rankLoss = numOrNull(gf(row, kw.nameToCol, "検索広告の IS 損失率（ランク）"));
@@ -1349,18 +1394,24 @@ function aggregateService(kw, query, ads) {
   const campaignTypeMonthly = {};
   const campaignMonthlyRaw = {};
 
+  // 月次内訳の列がないレポートは、シートの期間表記（例:「2026年4月1日 - 2026年6月30日」）を
+  // 単一期間のキーとして使い、月別グラフではなく1期間分の集計として扱う。
+  const hasMonthCol = query.nameToCol["月"] !== undefined;
+  const fallbackPeriod = kw.periodLabel || ads.periodLabel || query.periodLabel || "全期間";
+
   for (const row of query.dataRows) {
     const term = gf(row, query.nameToCol, "検索語句");
     if (term === undefined || term === null || term === "") continue;
     const isTotal = String(term).startsWith("合計:");
-    const month = monthStr(gf(row, query.nameToCol, "月"));
+    const month = hasMonthCol ? monthStr(gf(row, query.nameToCol, "月")) : fallbackPeriod;
     const cost = numOrNull(gf(row, query.nameToCol, "費用")) || 0;
     const clicks = numOrNull(gf(row, query.nameToCol, "クリック数")) || 0;
     const impr = numOrNull(gf(row, query.nameToCol, "表示回数")) || 0;
     const cv = numOrNull(gf(row, query.nameToCol, "コンバージョン")) || 0;
 
     if (isTotal) {
-      if (month === null) continue;
+      // 月次列がある場合、月の無い合計行は「全期間の合計」の重複行なのでスキップする
+      if (hasMonthCol && month === null) continue;
       const label = String(term).replace("合計:", "").trim();
       const rowMetrics = {
         cost: Math.round(cost), clicks: Math.round(clicks), impressions: Math.round(impr),
@@ -1517,7 +1568,7 @@ async function importXlsxFile(file) {
 
   async function loadSheet(sheetName) {
     const bytes = await extractEntry(zip, sheetPathMap[sheetName]);
-    return parseSheet(parseXML(bytes), sharedStrings, 3);
+    return parseSheet(parseXML(bytes), sharedStrings);
   }
 
   const services = {};
