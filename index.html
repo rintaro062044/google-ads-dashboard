@@ -1,0 +1,1601 @@
+<!doctype html>
+<title>Google広告 分析ダッシュボード</title>
+<meta charset="utf-8">
+<style>
+:root {
+  --ink: #101823;
+  --ink-soft: #4B5867;
+  --paper: #F4F6F8;
+  --surface: #FFFFFF;
+  --surface-2: #EDF1F3;
+  --line: #D8DEE4;
+  --accent: #146B7A;
+  --accent-strong: #0E525E;
+  --accent-soft: #E1EFEF;
+  --good: #2E8B57;
+  --good-soft: #E4F3EA;
+  --warn: #B8791E;
+  --warn-soft: #FBF0DC;
+  --critical: #C1443B;
+  --critical-soft: #FBE7E5;
+  --shadow: 0 1px 2px rgba(16,24,35,0.06), 0 6px 20px rgba(16,24,35,0.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #E7ECF1;
+    --ink-soft: #A6B2BE;
+    --paper: #0B1219;
+    --surface: #121B24;
+    --surface-2: #182430;
+    --line: #263340;
+    --accent: #4FB6C4;
+    --accent-strong: #7ED0DB;
+    --accent-soft: #163038;
+    --good: #57B98A;
+    --good-soft: #123423;
+    --warn: #D9A64B;
+    --warn-soft: #3A2C11;
+    --critical: #E28079;
+    --critical-soft: #3A1917;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #E7ECF1; --ink-soft: #A6B2BE; --paper: #0B1219; --surface: #121B24; --surface-2: #182430;
+  --line: #263340; --accent: #4FB6C4; --accent-strong: #7ED0DB; --accent-soft: #163038;
+  --good: #57B98A; --good-soft: #123423; --warn: #D9A64B; --warn-soft: #3A2C11;
+  --critical: #E28079; --critical-soft: #3A1917;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+}
+:root[data-theme="light"] {
+  --ink: #101823; --ink-soft: #4B5867; --paper: #F4F6F8; --surface: #FFFFFF; --surface-2: #EDF1F3;
+  --line: #D8DEE4; --accent: #146B7A; --accent-strong: #0E525E; --accent-soft: #E1EFEF;
+  --good: #2E8B57; --good-soft: #E4F3EA; --warn: #B8791E; --warn-soft: #FBF0DC;
+  --critical: #C1443B; --critical-soft: #FBE7E5;
+  --shadow: 0 1px 2px rgba(16,24,35,0.06), 0 6px 20px rgba(16,24,35,0.05);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Hiragino Sans", "Yu Gothic Medium", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.num {
+  font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* header */
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.topbar h1 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.topbar .sub {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+.badge-note {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 12px;
+  white-space: nowrap;
+}
+
+/* control bar */
+.controlbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: var(--shadow);
+}
+.control-field { display: flex; flex-direction: column; gap: 4px; }
+.control-field label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+select#serviceSelect {
+  appearance: none;
+  font: inherit;
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--ink);
+  background: var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23146B7A"><path d="M5.8 7.5l4.2 4.2 4.2-4.2 1.3 1.3-5.5 5.5-5.5-5.5z"/></svg>') no-repeat right 10px center;
+  background-size: 14px;
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 34px 8px 12px;
+  min-width: 240px;
+  cursor: pointer;
+}
+select#serviceSelect:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.control-sep { width: 1px; align-self: stretch; background: var(--line); }
+.period-pill {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.period-pill b { color: var(--ink); }
+.legend-row {
+  margin-left: auto;
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  flex-wrap: wrap;
+}
+.legend-row .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+
+/* import control */
+.import-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: white;
+  background: var(--accent);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.import-btn:hover { background: var(--accent-strong); }
+.import-reset {
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+.import-status { font-size: 12px; color: var(--ink-soft); }
+.import-status.is-error { color: var(--critical); }
+.import-status.is-ok { color: var(--good); }
+
+/* goal bar (target CPA) */
+.section.goalbar { padding: 14px 20px; }
+.goal-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.goal-row label { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
+.goal-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.goal-input-wrap input {
+  font: inherit;
+  color: inherit;
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 110px;
+}
+.goal-hint { font-size: 12.5px; color: var(--ink-soft); }
+.goal-hint .delta { margin-left: 6px; }
+
+/* keyword analysis mini stats */
+.kpi-mini-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.kpi-mini {
+  flex: 1;
+  min-width: 180px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.kpi-mini .label { font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+.kpi-mini .value { font-size: 19px; font-weight: 700; }
+
+/* target-CPA cell coloring (drilldown + keyword tables) */
+table.datatable td.cpa-good { color: var(--good); font-weight: 700; }
+table.datatable td.cpa-bad { color: var(--critical); font-weight: 700; }
+
+/* TD analysis */
+.td-cat-block { margin-bottom: 14px; }
+.td-cat-block:last-child { margin-bottom: 0; }
+.td-cat-block .cat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.td-cat-block .cat-head .count { color: var(--ink-soft); font-weight: 400; }
+.td-cat-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* KPI strip */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 96px;
+}
+.kpi-card .label { font-size: 12px; color: var(--ink-soft); }
+.kpi-card .value { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; }
+.kpi-card .foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.delta { font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 999px; }
+.delta.up-good { color: var(--good); background: var(--good-soft); }
+.delta.up-bad { color: var(--critical); background: var(--critical-soft); }
+.delta.down-good { color: var(--good); background: var(--good-soft); }
+.delta.down-bad { color: var(--critical); background: var(--critical-soft); }
+.delta.flat { color: var(--ink-soft); background: var(--surface-2); }
+.spark { width: 84px; height: 26px; }
+
+/* section shell */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px 20px;
+  box-shadow: var(--shadow);
+}
+.section h2 {
+  font-size: 15px;
+  margin: 0 0 4px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section .desc { color: var(--ink-soft); font-size: 12.5px; margin: 0 0 14px; }
+
+.empty-state {
+  text-align: center;
+  padding: 56px 24px;
+}
+.empty-state-icon { font-size: 34px; margin-bottom: 12px; }
+.empty-state h2 { justify-content: center; font-size: 17px; margin-bottom: 10px; }
+.empty-state .desc {
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1.05fr 1.4fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 980px) { .two-col { grid-template-columns: 1fr; } }
+
+/* insight cards */
+.insight-list { display: flex; flex-direction: column; gap: 10px; }
+.insight {
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.insight.sev-critical { border-left-color: var(--critical); }
+.insight.sev-warn { border-left-color: var(--warn); }
+.insight.sev-good { border-left-color: var(--good); }
+.insight.sev-info { border-left-color: var(--accent); }
+.insight .head { display: flex; align-items: center; gap: 8px; }
+.chip { font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; }
+.chip.sev-critical { color: var(--critical); background: var(--critical-soft); }
+.chip.sev-warn { color: var(--warn); background: var(--warn-soft); }
+.chip.sev-good { color: var(--good); background: var(--good-soft); }
+.chip.sev-info { color: var(--accent); background: var(--accent-soft); }
+.insight .title { font-weight: 700; font-size: 13.5px; }
+.insight .body { font-size: 12.5px; color: var(--ink-soft); }
+
+/* comparison bars */
+.metric-block { margin-bottom: 16px; }
+.metric-block:last-child { margin-bottom: 0; }
+.metric-block .mtitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+.bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.bar-row .name { width: 108px; flex-shrink: 0; font-size: 12px; color: var(--ink-soft); }
+.bar-row.is-main .name { color: var(--ink); font-weight: 700; }
+.bar-track { flex: 1; height: 16px; background: var(--surface-2); border-radius: 5px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 5px; }
+.bar-row .val { width: 78px; text-align: right; font-size: 12px; flex-shrink: 0; }
+
+/* drilldown: campaign / campaign-type breakdown */
+.toggle-group {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.toggle-btn {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--surface);
+  border: none;
+  padding: 7px 16px;
+  cursor: pointer;
+}
+.toggle-btn + .toggle-btn { border-left: 1px solid var(--line); }
+.toggle-btn.active { background: var(--accent); color: white; }
+.toggle-group-sub { margin-left: 10px; margin-bottom: 14px; }
+.toggle-group-sub .toggle-btn { padding: 5px 12px; font-size: 11.5px; }
+.toggle-group-sub .toggle-btn.active { background: var(--ink-soft); }
+table.datatable.drill-table td.group-name { font-weight: 700; vertical-align: middle; border-right: 1px solid var(--line); }
+table.datatable.drill-table tbody tr.group-first td { border-top: 2px solid var(--line); }
+table.datatable.drill-table tbody tr.is-main-row { background: var(--accent-soft); }
+table.datatable.drill-table tbody tr.is-main-row td:nth-child(2) { font-weight: 700; }
+table.datatable.drill-table tbody tr:first-child td { border-top: none; }
+
+/* tables */
+table.datatable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+table.datatable th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--line);
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+table.datatable td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+table.datatable tr:last-child td { border-bottom: none; }
+table.datatable td.num, table.datatable th.num { text-align: right; }
+.table-scroll { overflow-x: auto; }
+.tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 980px) { .tables-grid { grid-template-columns: 1fr; } }
+
+/* chip style (reused by TD analysis) */
+.hchip {
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+footer.note {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  text-align: center;
+  padding-top: 6px;
+}
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <h1>Google広告 分析ダッシュボード</h1>
+      <div class="sub">Excelレポートをインポートして、改善点・競合比較・訴求傾向をその場で分析します</div>
+    </div>
+    <div class="badge-note">🔒 データはブラウザ内でのみ処理（サーバー送信なし）</div>
+  </div>
+
+  <div class="controlbar">
+    <div class="control-field">
+      <label for="fileInput">データソース</label>
+      <div class="import-row">
+        <label class="import-btn" for="fileInput">Excelを読み込む</label>
+        <input type="file" id="fileInput" accept=".xlsx" style="display:none">
+        <span class="import-status" id="importStatus">Excelファイル（.xlsx）を読み込むと分析が始まります</span>
+        <button type="button" class="import-reset" id="importReset" style="display:none">クリア</button>
+      </div>
+    </div>
+    <div class="control-sep"></div>
+    <div class="control-field">
+      <label for="serviceSelect">分析対象（メインサービス）</label>
+      <select id="serviceSelect"></select>
+    </div>
+    <div class="control-sep"></div>
+    <div class="period-pill" id="periodPill"></div>
+    <div class="legend-row" id="legendRow"></div>
+  </div>
+
+  <div class="section empty-state" id="emptyState">
+    <div class="empty-state-icon">📊</div>
+    <h2>Excelファイルをインポートしてください</h2>
+    <p class="desc">Google広告の管理画面からエクスポートした「〇〇_KW_...」「〇〇_クエリ_...」「〇〇_広告_...」の3シート構成を含むレポート（.xlsx）に対応しています。上の「Excelを読み込む」から選択すると、費用・品質スコア・訴求文言などを自動集計してこのページに表示します。</p>
+  </div>
+
+  <div id="analysisSections" style="display:none">
+    <div class="section goalbar">
+      <div class="goal-row">
+        <label for="targetCpaInput">目標CPA</label>
+        <div class="goal-input-wrap">¥<input type="number" id="targetCpaInput" placeholder="例: 20000" min="0" step="100"></div>
+        <span class="goal-hint" id="goalHint"></span>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="section">
+      <h2>キャンペーンタイプ分析</h2>
+    <p class="desc">検索・P-MAXなど、キャンペーンタイプ別の月次パフォーマンス。「競合比較軸」で同カテゴリ他社とも比較できます</p>
+    <div class="toggle-group" id="typeAxisToggle">
+      <button class="toggle-btn active" data-axis="group">タイプ軸</button>
+      <button class="toggle-btn" data-axis="month">月別軸</button>
+      <button class="toggle-btn" data-axis="compare">競合比較軸</button>
+    </div>
+    <div class="toggle-group toggle-group-sub" id="compareGranularityToggle" style="display:none">
+      <button class="toggle-btn active" data-gran="total">3ヶ月合計</button>
+      <button class="toggle-btn" data-gran="monthly">月別</button>
+    </div>
+    <div class="table-scroll">
+      <table class="datatable drill-table" id="typeTable"></table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>キャンペーン分析</h2>
+    <p class="desc">個別キャンペーンの月次パフォーマンス</p>
+    <div class="toggle-group" id="campaignAxisToggle">
+      <button class="toggle-btn active" data-axis="group">キャンペーン軸</button>
+      <button class="toggle-btn" data-axis="month">月別軸</button>
+    </div>
+    <div class="table-scroll">
+      <table class="datatable drill-table" id="campaignTable"></table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>キーワード分析</h2>
+    <p class="desc">品質スコア・機会損失・費用対効果をまとめて確認</p>
+    <div class="kpi-mini-row">
+      <div class="kpi-mini"><div class="label">平均品質スコア</div><div class="value num" id="kwAvgQS">—</div></div>
+      <div class="kpi-mini"><div class="label">検索広告のインプレッションシェア</div><div class="value num" id="kwAvgIS">—</div></div>
+    </div>
+    <div class="tables-grid">
+      <div>
+        <div class="mtitle" style="font-size:12px;font-weight:700;color:var(--critical);margin-bottom:8px;">コンバージョンなしで費用消化（上位10件）</div>
+        <div class="table-scroll">
+          <table class="datatable" id="wastedTable"></table>
+        </div>
+      </div>
+      <div>
+        <div class="mtitle" style="font-size:12px;font-weight:700;color:var(--good);margin-bottom:8px;">コンバージョン獲得キーワード（上位10件）</div>
+        <div class="table-scroll">
+          <table class="datatable" id="performTable"></table>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="mtitle" style="font-size:12px;font-weight:700;color:var(--warn);margin-bottom:8px;">掲載順位起因のIS損失が大きいキーワード（上位10件）</div>
+      <div class="table-scroll">
+        <table class="datatable" id="rankLossTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>TD分析（訴求軸）</h2>
+    <p class="desc">広告見出し・説明文をキーワードから自動分類し、訴求の傾向を比較</p>
+    <div class="two-col">
+      <div>
+        <div class="mtitle" style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:8px;">メインサービスの訴求内訳</div>
+        <div id="tdMainBreakdown"></div>
+      </div>
+      <div>
+        <div class="mtitle" style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:8px;">競合との訴求軸シェア比較</div>
+        <div id="tdCompareBlock"></div>
+      </div>
+    </div>
+  </div>
+
+    <div class="section">
+      <h2>アカウント改善ポイント</h2>
+      <p class="desc">選択中のアカウントを自動診断した結果です</p>
+      <div class="insight-list" id="insightList"></div>
+    </div>
+  </div>
+
+  <footer class="note">※ 集計はすべてブラウザ内のJavaScriptで完結しています。読み込んだExcelの内容が外部サーバーに送信されることはありません。</footer>
+</div>
+
+<script>
+let DATA = { services: {} };
+let ORDER = [];
+const PALETTE = ["#3B6FA0", "#C97A3D", "#7A5C9E", "#4C9A6A", "#B25470", "#5B8A8A"];
+function svcColor(key) {
+  const i = ORDER.indexOf(key);
+  return PALETTE[(i < 0 ? 0 : i) % PALETTE.length];
+}
+
+let mainKey = null;
+
+function fmtYen(v) {
+  if (v === null || v === undefined) return "—";
+  return "¥" + Math.round(v).toLocaleString("ja-JP");
+}
+function fmtInt(v) {
+  if (v === null || v === undefined) return "—";
+  return Math.round(v).toLocaleString("ja-JP");
+}
+function fmtPct(v, digits) {
+  if (v === null || v === undefined) return "—";
+  return (v * 100).toFixed(digits === undefined ? 2 : digits) + "%";
+}
+
+function sumField(monthly, field) {
+  return monthly.reduce((a, m) => a + (m[field] || 0), 0);
+}
+function totals(svc) {
+  const cost = sumField(svc.monthly, "cost");
+  const clicks = sumField(svc.monthly, "clicks");
+  const impressions = sumField(svc.monthly, "impressions");
+  const conversions = sumField(svc.monthly, "conversions");
+  return {
+    cost, clicks, impressions, conversions,
+    ctr: impressions ? clicks / impressions : 0,
+    cpc: clicks ? cost / clicks : 0,
+    cvr: clicks ? conversions / clicks : 0,
+    cpa: conversions ? cost / conversions : null,
+  };
+}
+
+function sparklinePath(values, w, h, pad) {
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = (max - min) || 1;
+  const n = values.length;
+  const step = (w - pad * 2) / (n - 1);
+  return values.map((v, i) => {
+    const x = pad + step * i;
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return (i === 0 ? "M" : "L") + x.toFixed(1) + "," + y.toFixed(1);
+  }).join(" ");
+}
+
+function sparkSVG(values, color) {
+  const w = 84, h = 26, pad = 3;
+  const path = sparklinePath(values, w, h, pad);
+  const last = values[values.length - 1];
+  const max = Math.max(...values, 1), min = Math.min(...values, 0);
+  const range = (max - min) || 1;
+  const lastX = w - pad;
+  const lastY = h - pad - ((last - min) / range) * (h - pad * 2);
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <path d="${path}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="2.3" fill="${color}"/>
+  </svg>`;
+}
+
+function deltaBadge(prev, curr, higherIsBetter) {
+  if (prev === null || prev === undefined || curr === null || curr === undefined || prev === 0) {
+    return `<span class="delta flat">—</span>`;
+  }
+  const pct = ((curr - prev) / prev) * 100;
+  const rounded = Math.abs(pct) < 0.5 ? 0 : pct;
+  const arrow = rounded > 0 ? "▲" : rounded < 0 ? "▼" : "→";
+  const isGood = rounded === 0 ? null : (rounded > 0) === higherIsBetter;
+  const cls = rounded === 0 ? "flat" : (isGood ? (rounded > 0 ? "up-good" : "down-good") : (rounded > 0 ? "up-bad" : "down-bad"));
+  return `<span class="delta ${cls}">${arrow} ${Math.abs(rounded).toFixed(1)}%</span>`;
+}
+
+function renderLegend() {
+  const el = document.getElementById("legendRow");
+  el.innerHTML = ORDER.map(k => {
+    const svc = DATA.services[k];
+    return `<span><span class="dot" style="background:${svcColor(k)}"></span>${svc.name}</span>`;
+  }).join("");
+}
+
+function renderSelect() {
+  const sel = document.getElementById("serviceSelect");
+  sel.innerHTML = ORDER.map(k => `<option value="${k}">${DATA.services[k].name}</option>`).join("");
+  sel.value = mainKey;
+}
+
+function initServiceSelect() {
+  document.getElementById("serviceSelect").addEventListener("change", (e) => {
+    mainKey = e.target.value;
+    renderAll();
+  });
+}
+
+function renderKPI() {
+  const svc = DATA.services[mainKey];
+  const m = svc.monthly;
+  const t = totals(svc);
+  const prevM = m[m.length - 2], currM = m[m.length - 1];
+  const colorVal = svcColor(mainKey);
+
+  const cards = [
+    { label: "費用（3ヶ月合計）", value: fmtYen(t.cost), series: m.map(x => x.cost), prev: prevM.cost, curr: currM.cost, higherGood: false },
+    { label: "クリック数", value: fmtInt(t.clicks), series: m.map(x => x.clicks), prev: prevM.clicks, curr: currM.clicks, higherGood: true },
+    { label: "表示回数", value: fmtInt(t.impressions), series: m.map(x => x.impressions), prev: prevM.impressions, curr: currM.impressions, higherGood: true },
+    { label: "CTR", value: fmtPct(t.ctr), series: m.map(x => x.ctr), prev: prevM.ctr, curr: currM.ctr, higherGood: true },
+    { label: "平均CPC", value: fmtYen(t.cpc), series: m.map(x => x.cpc), prev: prevM.cpc, curr: currM.cpc, higherGood: false },
+    { label: "コンバージョン数", value: fmtInt(t.conversions), series: m.map(x => x.conversions), prev: prevM.conversions, curr: currM.conversions, higherGood: true },
+    { label: "CVR", value: fmtPct(t.cvr), series: m.map(x => x.cvr), prev: prevM.cvr, curr: currM.cvr, higherGood: true },
+    { label: "CPA", value: t.cpa ? fmtYen(t.cpa) : "—", series: m.map(x => x.cpa || 0), prev: prevM.cpa, curr: currM.cpa, higherGood: false },
+  ];
+
+  document.getElementById("kpiGrid").innerHTML = cards.map(c => `
+    <div class="kpi-card">
+      <div class="label">${c.label}</div>
+      <div class="value num">${c.value}</div>
+      <div class="foot">
+        ${deltaBadge(c.prev, c.curr, c.higherGood)}
+        ${sparkSVG(c.series, colorVal)}
+      </div>
+    </div>
+  `).join("");
+
+  const hintEl = document.getElementById("goalHint");
+  if (targetCPA === null) {
+    hintEl.textContent = "未設定（実績CPAとの比較に使用されます）";
+  } else if (t.cpa === null) {
+    hintEl.textContent = `目標 ¥${targetCPA.toLocaleString("ja-JP")}（実績CVが無いため比較不可）`;
+  } else {
+    const diffPct = ((t.cpa - targetCPA) / targetCPA) * 100;
+    const achieved = t.cpa <= targetCPA;
+    hintEl.innerHTML = `目標 ¥${targetCPA.toLocaleString("ja-JP")} に対し実績 ${fmtYen(t.cpa)}
+      <span class="delta ${achieved ? "up-good" : "up-bad"}">${achieved ? "達成" : "超過"} ${Math.abs(diffPct).toFixed(1)}%</span>`;
+  }
+}
+
+function buildInsights() {
+  const svc = DATA.services[mainKey];
+  const others = ORDER.filter(k => k !== mainKey).map(k => DATA.services[k]);
+  const insights = [];
+
+  // Wasted spend
+  const wastedTotal = svc.wastedKeywords.reduce((a, k) => a + k.cost, 0);
+  if (svc.wastedKeywords.length > 0) {
+    insights.push({
+      sev: wastedTotal > 50000 ? "critical" : "warn",
+      title: `コンバージョン0件のキーワードに${fmtYen(wastedTotal)}を消化`,
+      body: `上位10キーワード（例:「${svc.wastedKeywords[0].keyword}」）で費用のみ発生。除外設定または訴求LP見直しの検討余地あり。`,
+    });
+  }
+
+  // Quality score vs competitors
+  const avgOtherQS = others.reduce((a, o) => a + (o.avgQualityScore || 0), 0) / others.length;
+  if (svc.avgQualityScore !== null) {
+    const diff = svc.avgQualityScore - avgOtherQS;
+    insights.push({
+      sev: diff < -0.5 ? "warn" : (diff > 0.5 ? "good" : "info"),
+      title: `平均品質スコア ${svc.avgQualityScore}／競合平均 ${avgOtherQS.toFixed(2)}`,
+      body: diff < -0.5
+        ? "競合より品質スコアが低め。広告文とLPの関連性・キーワードマッチを見直すと表示価格の低下が期待できます。"
+        : diff > 0.5
+        ? "競合より品質スコアが高く、広告ランクの面で優位。この強みを訴求文の横展開に活用できます。"
+        : "競合と同水準の品質スコアです。",
+    });
+  }
+
+  // Impression share vs competitors
+  const avgOtherIS = others.reduce((a, o) => a + (o.avgImpressionShare || 0), 0) / others.length;
+  if (svc.avgImpressionShare !== null) {
+    const diff = svc.avgImpressionShare - avgOtherIS;
+    insights.push({
+      sev: diff < -0.1 ? "warn" : "info",
+      title: `検索広告のインプレッションシェア ${fmtPct(svc.avgImpressionShare, 1)}`,
+      body: diff < -0.1
+        ? `競合平均（${fmtPct(avgOtherIS, 1)}）より機会損失が大きい状態。入札強化・予算調整で表示機会を増やせる可能性があります。`
+        : `競合平均は${fmtPct(avgOtherIS, 1)}。表示機会はおおむね確保できています。`,
+    });
+  }
+
+  // Rank loss opportunity keyword
+  if (svc.rankLossKeywords.length > 0) {
+    const top = svc.rankLossKeywords[0];
+    insights.push({
+      sev: "warn",
+      title: `「${top.keyword}」は掲載順位の影響でIS損失 ${fmtPct(top.isRankLoss, 0)}`,
+      body: `費用${fmtYen(top.cost)}を投下しながら掲載順位不足で表示機会を逃しています。入札単価または品質スコアの改善で獲得を伸ばせる余地があります。`,
+    });
+  }
+
+  // Ad strength
+  const strengthEntries = Object.entries(svc.adStrengthDist || {});
+  const weakCount = strengthEntries.filter(([k]) => k === "低い" || k === "平均").reduce((a, [, v]) => a + v, 0);
+  const totalAds = strengthEntries.reduce((a, [, v]) => a + v, 0) || 1;
+  if (weakCount > 0) {
+    insights.push({
+      sev: weakCount / totalAds > 0.5 ? "critical" : "warn",
+      title: `広告の充実度が「平均」以下の広告が${weakCount}/${totalAds}件`,
+      body: svc.adImprovementSuggestions.length
+        ? `Google推奨の改善内容: 「${svc.adImprovementSuggestions[0].text}」が${svc.adImprovementSuggestions[0].count}件の広告で該当。`
+        : "アセットの追加でパフォーマンス向上が見込めます。",
+    });
+  }
+
+  // Top performer positive note
+  if (svc.topPerformingKeywords.length > 0) {
+    const top = svc.topPerformingKeywords[0];
+    insights.push({
+      sev: "good",
+      title: `「${top.keyword}」が最多${top.conversions.toFixed(1)}件のコンバージョンを獲得`,
+      body: `CPA ${fmtYen(top.cpa)}。好調キーワードへの予算配分強化で更なる獲得増が期待できます。`,
+    });
+  }
+
+  // Target CPA achievement
+  const t = totals(svc);
+  if (targetCPA !== null && t.cpa !== null) {
+    const diffPct = ((t.cpa - targetCPA) / targetCPA) * 100;
+    const achieved = t.cpa <= targetCPA;
+    insights.push({
+      sev: achieved ? "good" : "critical",
+      title: achieved
+        ? `目標CPA ¥${targetCPA.toLocaleString("ja-JP")} を達成（実績 ${fmtYen(t.cpa)}）`
+        : `目標CPA ¥${targetCPA.toLocaleString("ja-JP")} を${Math.abs(diffPct).toFixed(1)}%超過（実績 ${fmtYen(t.cpa)}）`,
+      body: achieved
+        ? "現在の配分・入札のバランスは目標水準を満たしています。好調キャンペーンへの再配分でさらなる上振れも狙えます。"
+        : "「キャンペーンタイプ分析」「キャンペーン分析」でCPAが赤字表示の行を優先的に見直すと、目標達成に近づけます。",
+    });
+  }
+
+  return insights;
+}
+
+function renderInsights() {
+  const insights = buildInsights();
+  const sevOrder = { critical: 0, warn: 1, info: 2, good: 3 };
+  insights.sort((a, b) => sevOrder[a.sev] - sevOrder[b.sev]);
+  const sevLabel = { critical: "重要", warn: "要確認", info: "情報", good: "好調" };
+
+  document.getElementById("insightList").innerHTML = insights.map(i => `
+    <div class="insight sev-${i.sev}">
+      <div class="head"><span class="chip sev-${i.sev}">${sevLabel[i.sev]}</span></div>
+      <div class="title">${i.title}</div>
+      <div class="body">${i.body}</div>
+    </div>
+  `).join("");
+}
+
+const MONTH_LABEL = { "2026-04": "4月", "2026-05": "5月", "2026-06": "6月" };
+
+let targetCPA = null;
+
+function cpaColorClass(cpa) {
+  if (targetCPA === null || cpa === null || cpa === undefined) return "";
+  return cpa <= targetCPA ? " cpa-good" : " cpa-bad";
+}
+
+const DRILL_METRIC_COLS = [
+  { key: "cost", label: "費用", fmt: fmtYen },
+  { key: "impressions", label: "表示回数", fmt: fmtInt },
+  { key: "clicks", label: "クリック数", fmt: fmtInt },
+  { key: "ctr", label: "CTR", fmt: v => fmtPct(v) },
+  { key: "cpc", label: "平均CPC", fmt: fmtYen },
+  { key: "conversions", label: "CV", fmt: v => v.toFixed(1) },
+  { key: "cvr", label: "CVR", fmt: v => fmtPct(v) },
+  { key: "cpa", label: "CPA", fmt: v => v ? fmtYen(v) : "—" },
+];
+const TYPE_ORDER = ["検索", "P-MAX", "ディスプレイ", "デマンドジェネレーション"];
+
+// axis: "group" = group-by-name rows with month sub-rows; "month" = group-by-month rows with name sub-rows (transposed)
+function buildPivotGroups(source, axis, orderedNames) {
+  if (axis === "group") {
+    const names = orderedNames || Object.keys(source);
+    return names.filter(n => source[n]).map(name => ({
+      label: name,
+      rows: source[name].map(r => ({ subLabel: MONTH_LABEL[r.month] || r.month, data: r })),
+    }));
+  }
+  const byMonth = {};
+  for (const [name, rows] of Object.entries(source)) {
+    for (const r of rows) {
+      (byMonth[r.month] ??= []).push({ subLabel: name, data: r });
+    }
+  }
+  return Object.keys(byMonth).sort().map(m => ({ label: MONTH_LABEL[m] || m, rows: byMonth[m] }));
+}
+
+function renderGroupsTable(tableId, groups, firstColLabel, secondColLabel) {
+  const header = `<thead><tr>
+    <th>${firstColLabel}</th>
+    <th>${secondColLabel}</th>
+    ${DRILL_METRIC_COLS.map(c => `<th class="num">${c.label}</th>`).join("")}
+  </tr></thead>`;
+
+  const bodyRows = [];
+  groups.forEach(grp => {
+    grp.rows.forEach((row, i) => {
+      const cells = DRILL_METRIC_COLS.map(col => {
+        const v = row.data[col.key];
+        const cls = col.key === "cpa" ? "num" + cpaColorClass(v) : "num";
+        return `<td class="${cls}">${v === null || v === undefined ? "—" : col.fmt(v)}</td>`;
+      }).join("");
+      const dot = row.color ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;background:${row.color}"></span>` : "";
+      bodyRows.push(`<tr class="${i === 0 ? "group-first" : ""}${row.isMain ? " is-main-row" : ""}">
+        ${i === 0 ? `<td class="group-name" rowspan="${grp.rows.length}">${grp.label}</td>` : ""}
+        <td>${dot}${row.subLabel}</td>
+        ${cells}
+      </tr>`);
+    });
+  });
+
+  document.getElementById(tableId).innerHTML = header + `<tbody>${bodyRows.join("") || `<tr><td colspan="${DRILL_METRIC_COLS.length + 2}" style="color:var(--ink-soft)">データなし</td></tr>`}</tbody>`;
+}
+
+function renderPivotTable(tableId, source, axis, groupColLabel, subColLabel, orderedNames) {
+  const groups = buildPivotGroups(source, axis, orderedNames);
+  const firstLabel = axis === "group" ? groupColLabel : subColLabel;
+  const secondLabel = axis === "group" ? subColLabel : groupColLabel;
+  renderGroupsTable(tableId, groups, firstLabel, secondLabel);
+}
+
+// 3ヶ月合計を「キャンペーンタイプ」単位でサービス横断に集計（競合比較軸用）
+function typeTotals(svc, typeName) {
+  const rows = svc.campaignTypeMonthly[typeName] || [];
+  const cost = rows.reduce((a, r) => a + r.cost, 0);
+  const clicks = rows.reduce((a, r) => a + r.clicks, 0);
+  const impressions = rows.reduce((a, r) => a + r.impressions, 0);
+  const conversions = rows.reduce((a, r) => a + r.conversions, 0);
+  return {
+    cost, clicks, impressions, conversions,
+    ctr: impressions ? clicks / impressions : 0,
+    cpc: clicks ? cost / clicks : 0,
+    cvr: clicks ? conversions / clicks : 0,
+    cpa: conversions ? cost / conversions : null,
+  };
+}
+
+function buildTypeCompareGroups() {
+  const typesPresent = TYPE_ORDER.filter(t => ORDER.some(k => DATA.services[k].campaignTypeMonthly[t]));
+  return typesPresent.map(type => ({
+    label: type,
+    rows: ORDER.map(k => ({
+      subLabel: DATA.services[k].name,
+      data: typeTotals(DATA.services[k], type),
+      isMain: k === mainKey,
+      color: svcColor(k),
+    })),
+  }));
+}
+
+const ZERO_METRICS = { cost: 0, clicks: 0, impressions: 0, conversions: 0, ctr: 0, cpc: 0, cvr: 0, cpa: null };
+
+function buildTypeCompareGroupsMonthly() {
+  const typesPresent = TYPE_ORDER.filter(t => ORDER.some(k => DATA.services[k].campaignTypeMonthly[t]));
+  const allMonths = [...new Set(
+    ORDER.flatMap(k => Object.values(DATA.services[k].campaignTypeMonthly).flat().map(r => r.month))
+  )].sort();
+
+  const groups = [];
+  typesPresent.forEach(type => {
+    allMonths.forEach(month => {
+      const hasAny = ORDER.some(k => (DATA.services[k].campaignTypeMonthly[type] || []).some(r => r.month === month));
+      if (!hasAny) return;
+      groups.push({
+        label: `${type}｜${MONTH_LABEL[month] || month}`,
+        rows: ORDER.map(k => {
+          const rows = DATA.services[k].campaignTypeMonthly[type] || [];
+          const r = rows.find(x => x.month === month);
+          return { subLabel: DATA.services[k].name, data: r || ZERO_METRICS, isMain: k === mainKey, color: svcColor(k) };
+        }),
+      });
+    });
+  });
+  return groups;
+}
+
+let typeAxis = "group";
+let campaignAxis = "group";
+let compareGranularity = "total";
+
+function renderTypeAnalysis() {
+  document.getElementById("compareGranularityToggle").style.display = typeAxis === "compare" ? "" : "none";
+  if (typeAxis === "compare") {
+    const monthly = compareGranularity === "monthly";
+    const groups = monthly ? buildTypeCompareGroupsMonthly() : buildTypeCompareGroups();
+    renderGroupsTable("typeTable", groups, monthly ? "タイプ｜月" : "キャンペーンタイプ", monthly ? "サービス（月次）" : "サービス（3ヶ月合計）");
+    return;
+  }
+  const svc = DATA.services[mainKey];
+  renderPivotTable("typeTable", svc.campaignTypeMonthly, typeAxis, "キャンペーンタイプ", "月", TYPE_ORDER);
+}
+
+function renderCampaignAnalysis() {
+  const svc = DATA.services[mainKey];
+  renderPivotTable("campaignTable", svc.campaignMonthly, campaignAxis, "キャンペーン", "月");
+}
+
+function renderKeywordAnalysis() {
+  const svc = DATA.services[mainKey];
+  document.getElementById("kwAvgQS").textContent = svc.avgQualityScore !== null ? `${svc.avgQualityScore} / 10` : "—";
+  document.getElementById("kwAvgIS").textContent = svc.avgImpressionShare !== null ? fmtPct(svc.avgImpressionShare, 1) : "—";
+
+  const wastedRows = svc.wastedKeywords.map(k => `
+    <tr>
+      <td>${k.keyword}</td>
+      <td class="num">${fmtYen(k.cost)}</td>
+      <td class="num">${fmtInt(k.clicks)}</td>
+      <td class="num">${fmtInt(k.impressions)}</td>
+    </tr>`).join("");
+  document.getElementById("wastedTable").innerHTML = `
+    <thead><tr><th>キーワード</th><th class="num">費用</th><th class="num">クリック</th><th class="num">表示回数</th></tr></thead>
+    <tbody>${wastedRows || `<tr><td colspan="4" style="color:var(--ink-soft)">該当キーワードなし</td></tr>`}</tbody>`;
+
+  const perfRows = svc.topPerformingKeywords.map(k => `
+    <tr>
+      <td>${k.keyword}</td>
+      <td class="num">${fmtYen(k.cost)}</td>
+      <td class="num">${k.conversions.toFixed(1)}</td>
+      <td class="num${cpaColorClass(k.cpa)}">${k.cpa ? fmtYen(k.cpa) : "—"}</td>
+    </tr>`).join("");
+  document.getElementById("performTable").innerHTML = `
+    <thead><tr><th>キーワード</th><th class="num">費用</th><th class="num">CV</th><th class="num">CPA</th></tr></thead>
+    <tbody>${perfRows || `<tr><td colspan="4" style="color:var(--ink-soft)">データなし</td></tr>`}</tbody>`;
+
+  const rankLossRows = svc.rankLossKeywords.map(k => `
+    <tr>
+      <td>${k.keyword}</td>
+      <td class="num">${fmtYen(k.cost)}</td>
+      <td class="num">${fmtPct(k.isRankLoss, 0)}</td>
+    </tr>`).join("");
+  document.getElementById("rankLossTable").innerHTML = `
+    <thead><tr><th>キーワード</th><th class="num">費用</th><th class="num">IS損失（ランク）</th></tr></thead>
+    <tbody>${rankLossRows || `<tr><td colspan="3" style="color:var(--ink-soft)">該当キーワードなし</td></tr>`}</tbody>`;
+}
+
+// ---- TD分析: 見出し・説明文をキーワードで訴求軸に自動分類 ----
+const TD_CATEGORIES = [
+  { key: "brand", label: "ブランド・公式訴求", re: /【公式】|公式/ },
+  { key: "price", label: "価格訴求", re: /円|無料|0円|割引|お得|安い|実質|コスパ/ },
+  { key: "campaign", label: "キャンペーン訴求", re: /キャンペーン|プレゼント|進呈|紹介|クーポン|抽選/ },
+  { key: "trust", label: "信頼・実績訴求", re: /安心|サポート|実績|満足|保証|信頼|口コミ|人気|品質/ },
+  { key: "speed", label: "手軽さ・スピード訴求", re: /簡単|すぐ|分で|スピード|ラクラク|完結|最短|24時間|web/i },
+];
+function categorizeHeadline(text) {
+  for (const cat of TD_CATEGORIES) if (cat.re.test(text)) return cat.key;
+  return "other";
+}
+function categorize(headlines) {
+  const buckets = {};
+  TD_CATEGORIES.forEach(c => buckets[c.key] = []);
+  buckets.other = [];
+  headlines.forEach(h => buckets[categorizeHeadline(h)].push(h));
+  return buckets;
+}
+const TD_LABELS = Object.fromEntries([...TD_CATEGORIES.map(c => [c.key, c.label]), ["other", "その他"]]);
+const TD_ORDER = [...TD_CATEGORIES.map(c => c.key), "other"];
+
+function renderTDAnalysis() {
+  const svc = DATA.services[mainKey];
+  const buckets = categorize(svc.sampleHeadlines);
+  const total = svc.sampleHeadlines.length || 1;
+
+  document.getElementById("tdMainBreakdown").innerHTML = TD_ORDER
+    .filter(k => buckets[k].length > 0)
+    .map(k => `
+      <div class="td-cat-block">
+        <div class="cat-head"><span>${TD_LABELS[k]}</span><span class="count">${buckets[k].length}件（${Math.round(buckets[k].length / total * 100)}%）</span></div>
+        <div class="td-cat-chips">${buckets[k].slice(0, 8).map(h => `<span class="hchip">${h}</span>`).join("")}</div>
+      </div>
+    `).join("") || `<p style="color:var(--ink-soft);font-size:12.5px;">見出しデータがありません</p>`;
+
+  // cross-service share comparison
+  const perSvcBuckets = {};
+  ORDER.forEach(k => { perSvcBuckets[k] = categorize(DATA.services[k].sampleHeadlines); });
+
+  const rows = TD_ORDER.map(catKey => {
+    const bars = ORDER.map(k => {
+      const svcTotal = DATA.services[k].sampleHeadlines.length || 1;
+      const share = perSvcBuckets[k][catKey].length / svcTotal;
+      const isMain = k === mainKey;
+      return `<div class="bar-row ${isMain ? "is-main" : ""}">
+        <div class="name">${DATA.services[k].name}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(share * 100)}%;background:${svcColor(k)};opacity:${isMain ? 1 : 0.55}"></div></div>
+        <div class="val num">${Math.round(share * 100)}%</div>
+      </div>`;
+    }).join("");
+    return `<div class="metric-block"><div class="mtitle"><span>${TD_LABELS[catKey]}</span></div>${bars}</div>`;
+  }).join("");
+  document.getElementById("tdCompareBlock").innerHTML = rows;
+}
+
+function renderPeriodPill() {
+  const allMonths = ORDER.flatMap(k => DATA.services[k].monthly.map(m => m.month)).sort();
+  const el = document.getElementById("periodPill");
+  if (!allMonths.length) { el.innerHTML = ""; return; }
+  const first = allMonths[0], last = allMonths[allMonths.length - 1];
+  const fmt = m => `${m.slice(0, 4)}年${parseInt(m.slice(5, 7), 10)}月`;
+  el.innerHTML = first === last
+    ? `対象期間　<b>${fmt(first)}</b>`
+    : `対象期間　<b>${fmt(first)} 〜 ${fmt(last)}</b>`;
+}
+
+function renderAll() {
+  renderPeriodPill();
+  renderKPI();
+  renderTypeAnalysis();
+  renderCampaignAnalysis();
+  renderKeywordAnalysis();
+  renderTDAnalysis();
+  renderInsights();
+}
+
+function initAxisToggle(elId, onChange, attr) {
+  attr = attr || "axis";
+  const el = document.getElementById(elId);
+  el.querySelectorAll(".toggle-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      el.querySelectorAll(".toggle-btn").forEach(b => b.classList.toggle("active", b === btn));
+      onChange(btn.dataset[attr]);
+    });
+  });
+}
+
+function initGoalBar() {
+  const input = document.getElementById("targetCpaInput");
+  input.addEventListener("input", () => {
+    const v = parseFloat(input.value);
+    targetCPA = input.value === "" || Number.isNaN(v) ? null : v;
+    renderKPI();
+    renderTypeAnalysis();
+    renderCampaignAnalysis();
+    renderKeywordAnalysis();
+    renderInsights();
+  });
+}
+
+/* ===================== Excelインポート機能 =====================
+   .xlsx（ZIP+XML）をブラウザ内だけで解析し、Google広告レポート
+   （〇〇_KW_.../〇〇_クエリ_.../〇〇_広告_... の3シート構成）から
+   このダッシュボードと同じ形のデータへ再集計する。サーバー送信なし。
+================================================================ */
+
+function numOrNull(v) {
+  if (v === null || v === undefined || v === "--" || v === "") return null;
+  const n = typeof v === "number" ? v : parseFloat(v);
+  return Number.isNaN(n) ? null : n;
+}
+function excelSerialToYearMonth(serial) {
+  const ms = Math.round((serial - 25569) * 86400 * 1000);
+  const d = new Date(ms);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+function monthStr(v) {
+  if (v === null || v === undefined || v === "") return null;
+  if (typeof v === "number") return excelSerialToYearMonth(v);
+  return String(v).slice(0, 7);
+}
+
+// ---- ZIP (xlsx container) reading ----
+async function readZipEntries(arrayBuffer) {
+  const view = new DataView(arrayBuffer);
+  const bytes = new Uint8Array(arrayBuffer);
+  const EOCD_SIG = 0x06054b50;
+  let eocdOffset = -1;
+  const scanStart = Math.max(0, bytes.length - 22 - 65557);
+  for (let i = bytes.length - 22; i >= scanStart; i--) {
+    if (view.getUint32(i, true) === EOCD_SIG) { eocdOffset = i; break; }
+  }
+  if (eocdOffset < 0) throw new Error("zip終端レコードが見つかりません。xlsxファイルとして正しいか確認してください。");
+  const entryCount = view.getUint16(eocdOffset + 10, true);
+  let offset = view.getUint32(eocdOffset + 16, true);
+  const CD_SIG = 0x02014b50;
+  const entries = {};
+  for (let i = 0; i < entryCount; i++) {
+    if (view.getUint32(offset, true) !== CD_SIG) break;
+    const compMethod = view.getUint16(offset + 10, true);
+    const compSize = view.getUint32(offset + 20, true);
+    const nameLen = view.getUint16(offset + 28, true);
+    const extraLen = view.getUint16(offset + 30, true);
+    const commentLen = view.getUint16(offset + 32, true);
+    const localHeaderOffset = view.getUint32(offset + 42, true);
+    const name = new TextDecoder("utf-8").decode(bytes.subarray(offset + 46, offset + 46 + nameLen));
+    entries[name] = { compMethod, compSize, localHeaderOffset };
+    offset += 46 + nameLen + extraLen + commentLen;
+  }
+  return { view, bytes, entries };
+}
+
+async function extractEntry(zip, name) {
+  const entry = zip.entries[name];
+  if (!entry) return null;
+  const { view, bytes } = zip;
+  const lh = entry.localHeaderOffset;
+  const nameLen = view.getUint16(lh + 26, true);
+  const extraLen = view.getUint16(lh + 28, true);
+  const dataStart = lh + 30 + nameLen + extraLen;
+  const compData = bytes.subarray(dataStart, dataStart + entry.compSize);
+  if (entry.compMethod === 0) return compData;
+  if (entry.compMethod === 8) {
+    if (typeof DecompressionStream === "undefined") {
+      throw new Error("このブラウザはxlsxの解凍(DecompressionStream)に対応していません。");
+    }
+    const ds = new DecompressionStream("deflate-raw");
+    const writer = ds.writable.getWriter();
+    writer.write(compData);
+    writer.close();
+    return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+  }
+  throw new Error("非対応の圧縮方式です（method=" + entry.compMethod + "）");
+}
+
+function parseXML(bytes) {
+  const text = new TextDecoder("utf-8").decode(bytes);
+  return new DOMParser().parseFromString(text, "application/xml");
+}
+
+function parseSharedStrings(doc) {
+  if (!doc) return [];
+  const arr = [];
+  for (const si of doc.getElementsByTagName("si")) {
+    let text = "";
+    for (const t of si.getElementsByTagName("t")) text += t.textContent;
+    arr.push(text);
+  }
+  return arr;
+}
+
+async function getSheetPathMap(zip) {
+  const wbBytes = await extractEntry(zip, "xl/workbook.xml");
+  const relsBytes = await extractEntry(zip, "xl/_rels/workbook.xml.rels");
+  const wbDoc = parseXML(wbBytes);
+  const relsDoc = relsBytes ? parseXML(relsBytes) : null;
+  const relMap = {};
+  if (relsDoc) {
+    for (const rel of relsDoc.getElementsByTagName("Relationship")) {
+      relMap[rel.getAttribute("Id")] = rel.getAttribute("Target");
+    }
+  }
+  const nameToPath = {};
+  for (const sheet of wbDoc.getElementsByTagName("sheet")) {
+    const name = sheet.getAttribute("name");
+    let rid = sheet.getAttribute("r:id");
+    if (!rid) {
+      for (const attr of sheet.attributes) {
+        if (attr.name.endsWith(":id")) { rid = attr.value; break; }
+      }
+    }
+    let target = relMap[rid];
+    if (!target) continue;
+    target = target.startsWith("/") ? target.slice(1) : "xl/" + target;
+    nameToPath[name] = target;
+  }
+  return nameToPath;
+}
+
+function colLetterToIndex(ref) {
+  const m = ref.match(/^([A-Z]+)/);
+  let col = 0;
+  for (const ch of m[1]) col = col * 26 + (ch.charCodeAt(0) - 64);
+  return col;
+}
+
+function extractAllRows(doc, sharedStrings) {
+  const rows = [];
+  for (const rowEl of doc.getElementsByTagName("row")) {
+    const rNum = parseInt(rowEl.getAttribute("r"), 10);
+    const cells = {};
+    for (const c of rowEl.getElementsByTagName("c")) {
+      const ref = c.getAttribute("r");
+      if (!ref) continue;
+      const colIdx = colLetterToIndex(ref);
+      const type = c.getAttribute("t");
+      let value = null;
+      if (type === "inlineStr") {
+        const isEl = c.getElementsByTagName("is")[0];
+        const tEl = isEl ? isEl.getElementsByTagName("t")[0] : null;
+        value = tEl ? tEl.textContent : "";
+      } else {
+        const vEl = c.getElementsByTagName("v")[0];
+        if (vEl) {
+          const raw = vEl.textContent;
+          if (type === "s") value = sharedStrings[parseInt(raw, 10)] ?? "";
+          else if (type === "b") value = raw === "1";
+          else if (type === "str") value = raw;
+          else value = parseFloat(raw);
+        }
+      }
+      cells[colIdx] = value;
+    }
+    rows.push({ rowNum: rNum, cells });
+  }
+  return rows;
+}
+
+function parseSheet(doc, sharedStrings, headerRowNum) {
+  const allRows = extractAllRows(doc, sharedStrings);
+  const nameToCol = {};
+  const dataRows = [];
+  for (const row of allRows) {
+    if (row.rowNum === headerRowNum) {
+      for (const [colIdx, v] of Object.entries(row.cells)) {
+        if (v !== null && v !== "") nameToCol[String(v)] = parseInt(colIdx, 10);
+      }
+    } else if (row.rowNum > headerRowNum) {
+      dataRows.push(row);
+    }
+  }
+  return { nameToCol, dataRows };
+}
+
+function gf(row, nameToCol, name) {
+  const idx = nameToCol[name];
+  if (idx === undefined) return undefined;
+  return row.cells[idx];
+}
+
+// ---- port of the Python aggregation logic (aggregate.py) ----
+function aggregateService(kw, query, ads) {
+  const kwTotals = {};
+  const qsValues = [];
+  const isValues = [];
+  const rankLossValues = [];
+
+  for (const row of kw.dataRows) {
+    const month = monthStr(gf(row, kw.nameToCol, "月"));
+    const keyword = gf(row, kw.nameToCol, "キーワード");
+    if (keyword === undefined || keyword === null || keyword === "" || month === null) continue;
+    const cost = numOrNull(gf(row, kw.nameToCol, "COST")) || 0;
+    const clicks = numOrNull(gf(row, kw.nameToCol, "CL")) || 0;
+    const impr = numOrNull(gf(row, kw.nameToCol, "IMP")) || 0;
+    const cv = numOrNull(gf(row, kw.nameToCol, "CV")) || 0;
+    const qs = numOrNull(gf(row, kw.nameToCol, "品質スコア"));
+    const isVal = numOrNull(gf(row, kw.nameToCol, "検索広告のインプレッション シェア"));
+    const rankLoss = numOrNull(gf(row, kw.nameToCol, "検索広告の IS 損失率（ランク）"));
+
+    if (!kwTotals[keyword]) kwTotals[keyword] = { cost: 0, clicks: 0, impressions: 0, conversions: 0, campaign: null, adgroup: null };
+    const kt = kwTotals[keyword];
+    kt.cost += cost; kt.clicks += clicks; kt.impressions += impr; kt.conversions += cv;
+    kt.campaign = gf(row, kw.nameToCol, "キャンペーン");
+    kt.adgroup = gf(row, kw.nameToCol, "広告グループ");
+
+    if (qs !== null) qsValues.push(qs);
+    if (isVal !== null) isValues.push(isVal);
+    if (rankLoss !== null && cost > 0) rankLossValues.push([keyword, cost, rankLoss]);
+  }
+
+  const wasted = Object.entries(kwTotals)
+    .filter(([, v]) => v.cost > 0 && v.conversions === 0)
+    .map(([k, v]) => ({ keyword: k, cost: Math.round(v.cost), clicks: Math.round(v.clicks), impressions: Math.round(v.impressions), campaign: v.campaign, adgroup: v.adgroup }))
+    .sort((a, b) => b.cost - a.cost)
+    .slice(0, 10);
+
+  const performing = Object.entries(kwTotals)
+    .filter(([, v]) => v.conversions > 0)
+    .map(([k, v]) => ({ keyword: k, cost: Math.round(v.cost), clicks: Math.round(v.clicks), conversions: Math.round(v.conversions * 10) / 10, cpa: v.conversions ? Math.round(v.cost / v.conversions) : null }))
+    .sort((a, b) => b.conversions - a.conversions)
+    .slice(0, 10);
+
+  const rankLossTop = rankLossValues.slice()
+    .sort((a, b) => (b[1] * b[2]) - (a[1] * a[2]))
+    .slice(0, 10)
+    .map(([k, c, loss]) => ({ keyword: k, cost: Math.round(c), isRankLoss: Math.round(loss * 10000) / 10000 }));
+
+  const avgQS = qsValues.length ? Math.round((qsValues.reduce((a, b) => a + b, 0) / qsValues.length) * 100) / 100 : null;
+  const avgIS = isValues.length ? Math.round((isValues.reduce((a, b) => a + b, 0) / isValues.length) * 10000) / 10000 : null;
+  const qsDist = {};
+  qsValues.forEach(v => { const k = String(Math.floor(v)); qsDist[k] = (qsDist[k] || 0) + 1; });
+
+  const qWasted = {};
+  const TYPE_LABELS = { "検索": "検索", "P-MAX": "P-MAX", "ディスプレイ": "ディスプレイ", "デマンド ジェネレーション": "デマンドジェネレーション" };
+  const accountMonthly = {};
+  const campaignTypeMonthly = {};
+  const campaignMonthlyRaw = {};
+
+  for (const row of query.dataRows) {
+    const term = gf(row, query.nameToCol, "検索語句");
+    if (term === undefined || term === null || term === "") continue;
+    const isTotal = String(term).startsWith("合計:");
+    const month = monthStr(gf(row, query.nameToCol, "月"));
+    const cost = numOrNull(gf(row, query.nameToCol, "費用")) || 0;
+    const clicks = numOrNull(gf(row, query.nameToCol, "クリック数")) || 0;
+    const impr = numOrNull(gf(row, query.nameToCol, "表示回数")) || 0;
+    const cv = numOrNull(gf(row, query.nameToCol, "コンバージョン")) || 0;
+
+    if (isTotal) {
+      if (month === null) continue;
+      const label = String(term).replace("合計:", "").trim();
+      const rowMetrics = {
+        cost: Math.round(cost), clicks: Math.round(clicks), impressions: Math.round(impr),
+        ctr: impr ? Math.round((clicks / impr) * 10000) / 10000 : 0,
+        cpc: clicks ? Math.round((cost / clicks) * 10) / 10 : 0,
+        conversions: Math.round(cv * 10) / 10,
+        cvr: clicks ? Math.round((cv / clicks) * 10000) / 10000 : 0,
+        cpa: cv ? Math.round(cost / cv) : null,
+        month,
+      };
+      if (label === "アカウント") {
+        accountMonthly[month] = rowMetrics;
+      } else if (TYPE_LABELS[label]) {
+        const tname = TYPE_LABELS[label];
+        if (!campaignTypeMonthly[tname]) campaignTypeMonthly[tname] = {};
+        campaignTypeMonthly[tname][month] = rowMetrics;
+      }
+      continue;
+    }
+
+    const status = gf(row, query.nameToCol, "追加済み / 除外済み");
+    if (!qWasted[term]) qWasted[term] = { cost: 0, clicks: 0, conversions: 0, status: null };
+    qWasted[term].cost += cost; qWasted[term].clicks += clicks; qWasted[term].conversions += cv; qWasted[term].status = status;
+
+    const campaign = gf(row, query.nameToCol, "キャンペーン");
+    if (month !== null && campaign !== undefined && campaign !== null && campaign !== "") {
+      if (!campaignMonthlyRaw[campaign]) campaignMonthlyRaw[campaign] = {};
+      if (!campaignMonthlyRaw[campaign][month]) campaignMonthlyRaw[campaign][month] = { cost: 0, clicks: 0, impressions: 0, conversions: 0 };
+      const cm = campaignMonthlyRaw[campaign][month];
+      cm.cost += cost; cm.clicks += clicks; cm.impressions += impr; cm.conversions += cv;
+    }
+  }
+
+  const qWastedList = Object.entries(qWasted)
+    .filter(([, v]) => v.cost > 0 && v.conversions === 0 && v.status !== "除外済み")
+    .map(([k, v]) => ({ term: k, cost: Math.round(v.cost), clicks: Math.round(v.clicks), status: v.status }))
+    .sort((a, b) => b.cost - a.cost)
+    .slice(0, 10);
+
+  const monthlyList = Object.keys(accountMonthly).sort().map(m => ({ ...accountMonthly[m], month: m }));
+
+  const campaignTypeResult = {};
+  for (const [tname, byMonth] of Object.entries(campaignTypeMonthly)) {
+    campaignTypeResult[tname] = Object.keys(byMonth).sort().map(m => ({ ...byMonth[m], month: m }));
+  }
+
+  const campaignMonthlyResult = {};
+  for (const [camp, byMonth] of Object.entries(campaignMonthlyRaw)) {
+    campaignMonthlyResult[camp] = Object.keys(byMonth).sort().map(m => {
+      const d = byMonth[m];
+      return {
+        month: m,
+        cost: Math.round(d.cost), clicks: Math.round(d.clicks), impressions: Math.round(d.impressions),
+        ctr: d.impressions ? Math.round((d.clicks / d.impressions) * 10000) / 10000 : 0,
+        cpc: d.clicks ? Math.round((d.cost / d.clicks) * 10) / 10 : 0,
+        conversions: Math.round(d.conversions * 10) / 10,
+        cvr: d.clicks ? Math.round((d.conversions / d.clicks) * 10000) / 10000 : 0,
+        cpa: d.conversions ? Math.round(d.cost / d.conversions) : null,
+      };
+    });
+  }
+  const campaignMonthlySorted = Object.fromEntries(
+    Object.entries(campaignMonthlyResult).sort((a, b) => {
+      const sa = a[1].reduce((s, r) => s + r.cost, 0);
+      const sb = b[1].reduce((s, r) => s + r.cost, 0);
+      return sb - sa;
+    })
+  );
+
+  const strengthDist = {};
+  const suggestions = {};
+  const sampleHeadlines = new Set();
+  let totalAds = 0;
+  const headlineCols = Object.keys(ads.nameToCol).filter(h => (h.startsWith("広告見出し") && !h.includes("位置")) || h === "長い広告見出し");
+
+  for (const row of ads.dataRows) {
+    const status = gf(row, ads.nameToCol, "広告のステータス");
+    if (status === undefined || status === null || status === "" || String(status).startsWith("合計")) continue;
+    const strength = gf(row, ads.nameToCol, "広告アセットの充実度");
+    const improve = gf(row, ads.nameToCol, "広告アセットの充実度の向上");
+    if (strength && strength !== "--") strengthDist[strength] = (strengthDist[strength] || 0) + 1;
+    if (improve && improve !== "--") {
+      String(improve).split(";").forEach(s => {
+        s = s.trim();
+        if (s) suggestions[s] = (suggestions[s] || 0) + 1;
+      });
+    }
+    for (const h of headlineCols) {
+      const v = gf(row, ads.nameToCol, h);
+      if (v && v !== "--" && !String(v).startsWith("{KeyWord")) sampleHeadlines.add(String(v));
+    }
+    totalAds++;
+  }
+
+  const topSuggestions = Object.entries(suggestions).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([text, count]) => ({ text, count }));
+
+  return {
+    monthly: monthlyList,
+    campaignTypeMonthly: campaignTypeResult,
+    campaignMonthly: campaignMonthlySorted,
+    wastedKeywords: wasted,
+    topPerformingKeywords: performing,
+    rankLossKeywords: rankLossTop,
+    wastedSearchTerms: qWastedList,
+    avgQualityScore: avgQS,
+    qualityScoreDist: qsDist,
+    avgImpressionShare: avgIS,
+    adStrengthDist: strengthDist,
+    adImprovementSuggestions: topSuggestions,
+    sampleHeadlines: Array.from(sampleHeadlines).slice(0, 60),
+    totalAds,
+  };
+}
+
+async function tryExtractFriendlyNames(zip, sheetPathMap, sharedStrings, prefixes) {
+  const firstSheetName = Object.keys(sheetPathMap)[0];
+  const bytes = await extractEntry(zip, sheetPathMap[firstSheetName]);
+  if (!bytes) return {};
+  const rows = extractAllRows(parseXML(bytes), sharedStrings);
+  const result = {};
+  for (const row of rows) {
+    const a = row.cells[1];
+    const b = row.cells[2];
+    if (a && prefixes.includes(String(a).trim()) && typeof b === "string" && b.trim().startsWith("◉")) {
+      result[String(a).trim()] = b.trim().replace(/^◉/, "");
+    }
+  }
+  return result;
+}
+
+async function importXlsxFile(file) {
+  const buf = await file.arrayBuffer();
+  const zip = await readZipEntries(buf);
+  const ssBytes = await extractEntry(zip, "xl/sharedStrings.xml");
+  const sharedStrings = ssBytes ? parseSharedStrings(parseXML(ssBytes)) : [];
+  const sheetPathMap = await getSheetPathMap(zip);
+
+  const KW_RE = /^(.+?)_KW_/;
+  const Q_RE = /^(.+?)_クエリ_/;
+  const AD_RE = /^(.+?)_広告_/;
+  const prefixMap = {};
+  for (const sheetName of Object.keys(sheetPathMap)) {
+    let m;
+    if ((m = sheetName.match(KW_RE))) { (prefixMap[m[1]] ??= {}).kw = sheetName; }
+    else if ((m = sheetName.match(Q_RE))) { (prefixMap[m[1]] ??= {}).query = sheetName; }
+    else if ((m = sheetName.match(AD_RE))) { (prefixMap[m[1]] ??= {}).ads = sheetName; }
+  }
+  const validPrefixes = Object.keys(prefixMap).filter(p => prefixMap[p].kw && prefixMap[p].query && prefixMap[p].ads);
+  if (validPrefixes.length === 0) {
+    throw new Error("対応シートが見つかりませんでした（「〇〇_KW_...」「〇〇_クエリ_...」「〇〇_広告_...」の3点セットが必要です）。");
+  }
+
+  const friendlyNames = await tryExtractFriendlyNames(zip, sheetPathMap, sharedStrings, validPrefixes);
+
+  async function loadSheet(sheetName) {
+    const bytes = await extractEntry(zip, sheetPathMap[sheetName]);
+    return parseSheet(parseXML(bytes), sharedStrings, 3);
+  }
+
+  const services = {};
+  for (const prefix of validPrefixes) {
+    const kwSheet = await loadSheet(prefixMap[prefix].kw);
+    const querySheet = await loadSheet(prefixMap[prefix].query);
+    const adsSheet = await loadSheet(prefixMap[prefix].ads);
+    services[prefix] = {
+      name: friendlyNames[prefix] || prefix,
+      url: "",
+      ...aggregateService(kwSheet, querySheet, adsSheet),
+    };
+  }
+  return { services };
+}
+
+function setImportStatus(text, kind) {
+  const el = document.getElementById("importStatus");
+  el.textContent = text;
+  el.classList.remove("is-error", "is-ok");
+  if (kind) el.classList.add(kind);
+}
+
+function resetAxisToggles() {
+  typeAxis = "group";
+  campaignAxis = "group";
+  compareGranularity = "total";
+  ["typeAxisToggle", "campaignAxisToggle"].forEach(id => {
+    const el = document.getElementById(id);
+    el.querySelectorAll(".toggle-btn").forEach(b => b.classList.toggle("active", b.dataset.axis === "group"));
+  });
+  document.getElementById("compareGranularityToggle").querySelectorAll(".toggle-btn")
+    .forEach(b => b.classList.toggle("active", b.dataset.gran === "total"));
+}
+
+function showAnalysis(show) {
+  document.getElementById("emptyState").style.display = show ? "none" : "";
+  document.getElementById("analysisSections").style.display = show ? "" : "none";
+}
+
+function initImportUI() {
+  const fileInput = document.getElementById("fileInput");
+  const resetBtn = document.getElementById("importReset");
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    setImportStatus(`読み込み中… (${file.name})`);
+    try {
+      const parsed = await importXlsxFile(file);
+      DATA = parsed;
+      ORDER = Object.keys(DATA.services);
+      mainKey = ORDER[0];
+      targetCPA = null;
+      document.getElementById("targetCpaInput").value = "";
+      resetAxisToggles();
+      renderLegend();
+      renderSelect();
+      showAnalysis(true);
+      renderAll();
+      setImportStatus(`読み込み完了: ${file.name}（${ORDER.length}件のサービスを検出）`, "is-ok");
+      resetBtn.style.display = "";
+    } catch (err) {
+      console.error(err);
+      setImportStatus(`読み込みに失敗しました: ${err.message}`, "is-error");
+    } finally {
+      fileInput.value = "";
+    }
+  });
+
+  resetBtn.addEventListener("click", () => {
+    DATA = { services: {} };
+    ORDER = [];
+    mainKey = null;
+    resetAxisToggles();
+    renderLegend();
+    renderSelect();
+    showAnalysis(false);
+    setImportStatus("Excelファイル（.xlsx）を読み込むと分析が始まります");
+    resetBtn.style.display = "none";
+  });
+}
+
+renderLegend();
+renderSelect();
+showAnalysis(false);
+initServiceSelect();
+initAxisToggle("typeAxisToggle", axis => { typeAxis = axis; renderTypeAnalysis(); });
+initAxisToggle("campaignAxisToggle", axis => { campaignAxis = axis; renderCampaignAnalysis(); });
+initAxisToggle("compareGranularityToggle", gran => { compareGranularity = gran; renderTypeAnalysis(); }, "gran");
+initGoalBar();
+initImportUI();
+</script>
