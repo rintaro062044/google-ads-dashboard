@@ -494,6 +494,10 @@ footer.note {
       <div class="kpi-mini"><div class="label">平均品質スコア</div><div class="value num" id="kwAvgQS">—</div></div>
       <div class="kpi-mini"><div class="label">検索広告のインプレッションシェア</div><div class="value num" id="kwAvgIS">—</div></div>
     </div>
+    <div style="margin-bottom:16px;">
+      <div class="mtitle" style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:8px;">指名 / 一般 コスト比率（Google検索、キャンペーン・広告グループ名から自動判定）</div>
+      <div id="brandGenericBlock"></div>
+    </div>
     <div class="tables-grid">
       <div>
         <div class="mtitle" style="font-size:12px;font-weight:700;color:var(--critical);margin-bottom:8px;">コンバージョンなしで費用消化（上位10件）</div>
@@ -894,10 +898,30 @@ function renderCampaignAnalysis() {
   renderPivotTable("campaignTable", svc.campaignMonthly, campaignAxis, "キャンペーン", "月");
 }
 
+const BRAND_GENERIC_LABEL = { brand: "指名", generic: "一般" };
+const BRAND_GENERIC_COLOR = { brand: "#3B6FA0", generic: "#C97A3D" };
+
+function renderBrandGenericSplit() {
+  const svc = DATA.services[mainKey];
+  const rows = svc.brandGenericSplit.filter(r => r.cost > 0 || r.clicks > 0);
+  if (!rows.length) {
+    document.getElementById("brandGenericBlock").innerHTML = `<p style="color:var(--ink-soft);font-size:12.5px;">検索キーワードのデータがありません</p>`;
+    return;
+  }
+  document.getElementById("brandGenericBlock").innerHTML = rows.map(r => `
+    <div class="bar-row is-main">
+      <div class="name">${BRAND_GENERIC_LABEL[r.key]}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(r.share * 100)}%;background:${BRAND_GENERIC_COLOR[r.key]}"></div></div>
+      <div class="val num">${fmtYen(r.cost)}（${Math.round(r.share * 100)}%）</div>
+    </div>
+  `).join("");
+}
+
 function renderKeywordAnalysis() {
   const svc = DATA.services[mainKey];
   document.getElementById("kwAvgQS").textContent = svc.avgQualityScore !== null ? `${svc.avgQualityScore} / 10` : "—";
   document.getElementById("kwAvgIS").textContent = svc.avgImpressionShare !== null ? fmtPct(svc.avgImpressionShare, 1) : "—";
+  renderBrandGenericSplit();
 
   const wastedRows = svc.wastedKeywords.map(k => `
     <tr>
@@ -1358,6 +1382,34 @@ function aggregateService(kw, query, ads) {
     .sort((a, b) => a.qualityScore - b.qualityScore || b.cost - a.cost)
     .slice(0, 10);
 
+  // 指名（ブランド）／一般の判定は公式フィールドが無いため、キャンペーン名・
+  // 広告グループ名によく使われる命名規則（指名/ブランド/商標/BRA）から推定する。
+  // KWレポートは検索キャンペーンのキーワードしか含まないため、ここでの
+  // キーワードは論理的に「指名」か「一般」のどちらかしかない。よって
+  // ブランド名パターンに一致しないものはすべて「一般」として扱う
+  // （「一般」側は店舗名・地域名など命名規則が揺れやすく、個別パターンでは拾いきれないため）。
+  const BRAND_NAME_RE = /指名|ブランド|商標|(?:^|[_\[\]])BRA(?:$|[_\[\]])/i;
+  function classifyBrandGeneric(campaign, adgroup) {
+    const text = `${campaign || ""} ${adgroup || ""}`;
+    return BRAND_NAME_RE.test(text) ? "brand" : "generic";
+  }
+  const brandGenericTotals = {
+    brand: { cost: 0, clicks: 0, conversions: 0 },
+    generic: { cost: 0, clicks: 0, conversions: 0 },
+  };
+  for (const v of Object.values(kwTotals)) {
+    const bucket = brandGenericTotals[classifyBrandGeneric(v.campaign, v.adgroup)];
+    bucket.cost += v.cost; bucket.clicks += v.clicks; bucket.conversions += v.conversions;
+  }
+  const brandGenericTotalCost = Object.values(brandGenericTotals).reduce((a, b) => a + b.cost, 0);
+  const brandGenericSplit = Object.entries(brandGenericTotals).map(([key, v]) => ({
+    key,
+    cost: Math.round(v.cost),
+    clicks: Math.round(v.clicks),
+    conversions: Math.round(v.conversions * 10) / 10,
+    share: brandGenericTotalCost ? v.cost / brandGenericTotalCost : 0,
+  }));
+
   const avgQS = qsValues.length ? Math.round((qsValues.reduce((a, b) => a + b, 0) / qsValues.length) * 100) / 100 : null;
   const avgIS = isValues.length ? Math.round((isValues.reduce((a, b) => a + b, 0) / isValues.length) * 10000) / 10000 : null;
   const qsDist = {};
@@ -1491,6 +1543,7 @@ function aggregateService(kw, query, ads) {
     topPerformingKeywords: performing,
     rankLossKeywords: rankLossTop,
     qualityScoreKeywords,
+    brandGenericSplit,
     wastedSearchTerms: qWastedList,
     avgQualityScore: avgQS,
     qualityScoreDist: qsDist,
